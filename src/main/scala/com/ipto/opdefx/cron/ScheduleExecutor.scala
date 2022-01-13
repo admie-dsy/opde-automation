@@ -1,0 +1,30 @@
+package com.ipto.opdefx.cron
+
+import java.util.concurrent.{Executors, TimeUnit}
+import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.format.DateTimeFormat
+
+class ScheduleExecutor(val schedule:Schedule, val task: () => Unit) {
+
+  private val executor = Executors.newScheduledThreadPool(1)
+  private var nextExecution:DateTime = schedule.getNextAfter(DateTime.now(DateTimeZone.forID("Europe/Athens")))
+  private val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
+
+  def start():Unit = {
+
+    executor.scheduleAtFixedRate(() => {
+      println(s"Executor time check now: ${fmt.print(DateTime.now())} next execution: ${fmt.print(nextExecution)}")
+      if (nextExecution.isBeforeNow) {
+        task()
+        nextExecution = schedule.getNextAfter(DateTime.now(DateTimeZone.forID("Europe/Athens")))
+      }
+    }, 5, 5, TimeUnit.SECONDS)
+
+  }
+
+  def shutdown():Unit = {
+    println("Stopping scheduled executor")
+    executor.shutdown()
+  }
+
+}
