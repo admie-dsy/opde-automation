@@ -17,14 +17,14 @@ case class Producer(queue:Queue[Token], dir:File, conf:ConfigProvider, flag:Ref[
     var counter = 0
 
     val loop = for {
-        value <- flag.get
+        //value <- flag.get
         //_ <- putStrLn(s"Flag value in producer $value")
         saml <- tokenProvider.provide
         _ = scanner.setSaml(saml)
         token <- ZIO.succeed(scanner.next())
-        //_ <- putStrLn(s"Producer producing ${token.message}")
+        _ <- putStrLn(s"Producer producing ${token.message}")
         _ <- queue.offer(token)
-        _ <- ZIO.sleep(10.seconds)
+        _ <- ZIO.sleep(5.seconds)
         _ <- ZIO.succeed{
           counter += 5
           if (counter == 100) {

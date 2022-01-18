@@ -1,35 +1,46 @@
 package com.ipto.opdefx.concurrency
 
+import java.io.IOException
+
 import com.ipto.opdefx.{EQ, Empty, SSH, SV, TP, Token}
 import zio._
 import zio.console._
 
 case class Distribute() {
 
-  def run = for {
+  def run: ZIO[Console, Nothing, (Queue[Token], TopicQueue, TopicQueue, TopicQueue, TopicQueue, Fiber.Runtime[IOException, Nothing])] = for {
 
-    jobQueue <- Queue.bounded[Token](10)
+    jobQueue <- Queue.bounded[Token](100)
 
-    queueSSH <- Queue.bounded[Token](10)
+    queueSSH <- Queue.bounded[Token](100)
     topicQueueSSH <- TopicQueue.create(queueSSH)
 
-    queueSV <- Queue.bounded[Token](10)
+    queueSV <- Queue.bounded[Token](100)
     topicQueueSV <- TopicQueue.create(queueSV)
 
-    queueTP <- Queue.bounded[Token](10)
+    queueTP <- Queue.bounded[Token](100)
     topicQueueTP <- TopicQueue.create(queueTP)
 
-    queueEQ <- Queue.bounded[Token](10)
+    queueEQ <- Queue.bounded[Token](100)
     topicQueueEQ <- TopicQueue.create(queueEQ)
 
     loop = for {
       job <- jobQueue.take
       _ <- job match {
-        case model:EQ => queueEQ.offer(model)
-        case model:TP => queueTP.offer(model)
-        case model:SV => queueSV.offer(model)
-        case model:SSH => queueSSH.offer(model)
-        case _:Empty => putStrLn("bla")
+        case model:EQ =>
+          println(s"Distributing EQ: ${model.message}")
+          queueEQ.offer(model)
+        case model:TP =>
+          println(s"Distributing TP: ${model.message}")
+          queueTP.offer(model)
+        case model:SV =>
+          println(s"Distributing SV: ${model.message}")
+          queueSV.offer(model)
+        case model:SSH =>
+          println(s"Distributing SSH: ${model.message}")
+          queueSSH.offer(model)
+        case _:Empty =>
+          putStrLn("Nothing to distribute")
       }
     } yield ()
     fiber <- loop.forever.fork

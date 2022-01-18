@@ -1,3 +1,5 @@
+
+
 package com.ipto.opdefx.concurrency
 
 import com.ipto.opdefx.Token
@@ -32,3 +34,4 @@ case class TopicQueue(queue:Queue[Token], subscribers:Ref[Map[Int, List[Queue[To
 object TopicQueue {
   def create(queue: Queue[Token]):UIO[TopicQueue] = Ref.make(Map.empty[Int, List[Queue[Token]]]) >>= (map => UIO(TopicQueue(queue, map)))
 }
+

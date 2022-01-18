@@ -40,18 +40,36 @@ object FiberSystem {
     producerFiber <- producer.run
 
     _ <- topicQueueSSH.subscribe(sshQueue, group = 1)
-    _ <- topicQueueSSH.run
+    topicSHHFiber <- topicQueueSSH.run
+
+    //_ <- topicSHHFiber.join
 
     _ <- topicQueueSV.subscribe(svQueue, group = 2)
-    _ <- topicQueueSV.run
+    topicQueueSVFiber <- topicQueueSV.run
+
+    //_ <- topicQueueSVFiber.join
 
     _ <- topicQueueTP.subscribe(tpQueue, group = 3)
-    _ <- topicQueueTP.run
+    topicQueueTPFiber <- topicQueueTP.run
+
+    //_ <- topicQueueTPFiber.join
 
     _ <- topicQueueEQ.subscribe(eqQueue, group = 4)
-    _ <- topicQueueEQ.run
+    topicQueueEQFiber <- topicQueueEQ.run
+
+    //_ <- topicQueueEQFiber.join
+
+    /*_ <- sshFibber.join
+
+    _ <- svFibber.join
+
+    _ <- tpFibber.join
+
+    _ <- eqFibber.join*/
 
     _ <- producerFiber.join
+
+    //_ <- distributeFiber.join
 
   } yield ()
 }

@@ -39,6 +39,44 @@ object RequestBroker {
 
   }
 
+  def sendRequest(endpoint:String, action:String, payload:ZIO[Any, Throwable, Array[Byte]]):ZIO[Any, Throwable, String] = {
+    val client = ZIO.succeed(HttpClients
+      .custom()
+      .setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE).build())
+      .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+      .build())
+
+    val request = for {
+      p <- payload
+      post <- ZIO.succeed{
+        val postReq = new HttpPost(endpoint)
+        postReq.setHeader("SOAPAction",  action)
+        postReq.setHeader("content-type", "text/xml;charset=UTF-8")
+        postReq.setHeader("Accept", "[*/*]")
+        val entity = new ByteArrayEntity(p)
+        postReq.setEntity(entity)
+        postReq
+      }
+    } yield post
+
+    val send:HttpPost => Task[String] = post => ZIO.bracket(client)(client => ZIO.succeed(client.close())) { client =>
+      ZIO.fromTry {
+        Try {
+          val resp = client.execute(post)
+          val respEntity = resp.getEntity
+          val respStr = EntityUtils.toString(respEntity)
+          resp.close()
+          StringEscapeUtils.unescapeXml(respStr)
+        }
+      }
+    }
+
+    for {
+      post <- request
+      response <- send(post)
+    } yield response
+  }
+
   def sendRequest(endpoint:String, action:String, payload:Array[Byte]):ZIO[Any, Throwable, String] = {
 
     val client = ZIO.succeed(HttpClients

@@ -26,6 +26,7 @@ case class Consumer(name:String, messageQueue:Queue[String]){
     queue <- Queue.bounded[Token](10)
     conf = ConfigProvider.newInstance("app.properties")
     loop = for {
+      _ <- ZIO.sleep(2.seconds)
       token <- queue.take
       //content <- read(token)
       message = new PublicationMessage(token.message, token.saml)
@@ -33,7 +34,6 @@ case class Consumer(name:String, messageQueue:Queue[String]){
       response <- RequestBroker.sendRequest(conf.publicationEnpoint, conf.publicationAction, content)
       _ <- putStrLn(response)
       _ <- putStrLn(s"[$name] Processed ${token.message} size: ${content.length}")
-      _ <- ZIO.sleep(10.seconds)
       _ <- ZIO.succeed(new File(token.message).delete())
       _ <- messageQueue.offer(s"[$name] finished processing ${token.message}, deleted file\n")
       _ <- putStrLn(s"[$name] finished processing ${token.message}, deleted file")
