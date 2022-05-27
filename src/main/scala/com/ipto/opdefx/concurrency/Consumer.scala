@@ -28,9 +28,11 @@ case class Consumer(name:String, messageQueue:Queue[String]){
     loop = for {
       _ <- ZIO.sleep(2.seconds)
       token <- queue.take
+      _ <- putStrLn(s"Consumer received message: ${token.message}")
       //content <- read(token)
       message = new PublicationMessage(token.message, token.saml)
       content <- message.program
+      _ <- putStrLn(s"Content size ${content.length}")
       response <- RequestBroker.sendRequest(conf.publicationEnpoint, conf.publicationAction, content)
       _ <- putStrLn(response)
       _ <- putStrLn(s"[$name] Processed ${token.message} size: ${content.length}")

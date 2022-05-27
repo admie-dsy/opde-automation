@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import zio._
 import zio.console._
 import java.nio.file.{Files, Paths}
+import com.ipto.opdefx.util.FileUtils
 
 import com.ipto.opdefx.requests.RequestBroker
 
@@ -13,7 +14,7 @@ class PublicationSpec extends AnyFunSuite {
   val conf: ConfigProvider = ConfigProvider.newInstance("app.properties")
   val provider = new TokenProvider(conf)
 
-  val resource = "C:\\Users\\k.passadis\\opde-client-workdir\\20220104T1930Z_20_IPTO_SV_001.zip"
+  val resource = "C:\\Users\\k.passadis\\opde-client-workdir\\out\\20220515T2230Z_01_IPTO_EQ_001.zip"
   val outputFile = "C:\\Users\\k.passadis\\opde-client-workdir\\out.txt"
 
   val tokenProgram:ZIO[Any, Throwable, String] = for {
@@ -45,6 +46,16 @@ class PublicationSpec extends AnyFunSuite {
   test("Publish Message"){
     val response = runtime.unsafeRun(publishMessage)
     println(response)
+  }
+
+  test("Copy files from shared folder") {
+    val srcDir = conf.sourceDir
+    val destDir = conf.out
+    val processedDir = conf.processed
+
+    val n = FileUtils.copyFiles(srcDir, destDir, processedDir, 10)
+
+    println(n)
   }
 
 

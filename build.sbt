@@ -16,8 +16,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.0",
   "joda-time" % "joda-time" % "2.10.13",
   "org.joda" % "joda-convert" % "2.2.2",
+  "com.h2database" % "h2" % "2.1.210",
   "org.scalatest" %% "scalatest-funsuite" % "3.2.10" % Test,
-
 )
 
 assemblyMergeStrategy in assembly := {

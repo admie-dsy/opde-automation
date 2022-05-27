@@ -4,7 +4,8 @@ import scala.io.Source
 
 class ConfigProvider private (val workdir:String, val out:String, val saml:String, val username:String, val password:String,
                               val tokenEndpoint:String, val tokenAction:String, val publicationEnpoint:String, val publicationAction:String,
-                              val processed:String, val script:String, val connectivityEndpoint:String) {
+                              val processed:String, val script:String, val connectivityEndpoint:String, val sourceDir:String,
+                              val in:String, val db:String) {
 
   override def toString: String = {
     List(workdir, out, saml, tokenEndpoint, tokenAction, publicationAction, publicationEnpoint, processed, script).mkString("\n")
@@ -31,9 +32,12 @@ object ConfigProvider {
       tokenAction = map("tokenAction"),
       publicationEnpoint = map("publicationEndpoint"),
       publicationAction = map("publicationAction"),
-      processed = map("processed"),
+      processed = appendToHomeDir(map("processed")),
       script = map("script"),
-      connectivityEndpoint = map("connectivityEndpoint")
+      connectivityEndpoint = map("connectivityEndpoint"),
+      sourceDir = map("sourceDir"),
+      in = appendToHomeDir(map("in")),
+      db = appendToHomeDir(map("db"))
     )
   }
 

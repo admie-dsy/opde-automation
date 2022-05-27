@@ -1,9 +1,13 @@
+
+
 package com.ipto.opdefx.ui
 
 import com.ipto.opdefx.concurrency.FiberSystem
 import com.ipto.opdefx.cron.ScheduleExecutor
+import com.ipto.opdefx.db.MessageDB
 import com.ipto.opdefx.provider.ConfigProvider
 import com.ipto.opdefx.requests.RequestBroker
+import com.ipto.opdefx.util.FileUtils
 //import javax.swing.table.DefaultTableModel
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
@@ -20,11 +24,12 @@ class MainUI extends MainFrame{
   private val conf = ConfigProvider.newInstance("app.properties")
   private val script = conf.script
   private val runtime = Runtime.default
+  private val db = new MessageDB(conf)
 
   title = "OPDE Automaton"
   preferredSize = new Dimension(1024, 384)
 
-  private val schedule = com.ipto.opdefx.cron.Schedule("54,00 * * * *", DateTimeZone.forID("Europe/Athens"))
+  private val schedule = com.ipto.opdefx.cron.Schedule("00,30 * * * *", DateTimeZone.forID("Europe/Athens"))
   private val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
   def build():ZIO[zio.clock.Clock, Nothing, Unit] = {
@@ -78,10 +83,15 @@ class MainUI extends MainFrame{
       executor = new ScheduleExecutor(schedule,
         () => {
           println("Doing stuff")
-          val scriptResult = s"python $script".!
+          //val scriptResult = s"python $script".!
+          val filenames = FileUtils.copyFiles(conf.sourceDir, conf.out, conf.processed, offset = 20)
+          runtime.unsafeRun{
+            for {
+              _ <- ZIO.foreach(filenames)(f=>db.insertReady(f))
+            } yield ()
+          }
           val nextRun = fmt.print(schedule.getNextAfter(DateTime.now()))
           nextRunField.text = nextRun
-          println(s"Stuff done, $scriptResult")
         }
       )
 
@@ -145,7 +155,7 @@ class MainUI extends MainFrame{
 
           add(Button("Show Progress"){
 
-            },
+          },
             constraints(6, 0, fill = GridBagPanel.Fill.None))
 
           add(Button("Connectivity Test") {
@@ -157,10 +167,10 @@ class MainUI extends MainFrame{
 
           add(Button("Exit"){
             runtime.unsafeRunAsync_(for {
-             flagValue <- flag.get
-             _ = if (flagValue == 1) flag.set(0)
-             _ = Thread.sleep(1000)
-             _ <- ZIO.succeed(System.exit(0))
+              flagValue <- flag.get
+              _ = if (flagValue == 1) flag.set(0)
+              _ = Thread.sleep(1000)
+              _ <- ZIO.succeed(System.exit(0))
             } yield ())
           }, constraints(8, 0, fill = GridBagPanel.Fill.None))
 
@@ -196,3 +206,4 @@ class MainUI extends MainFrame{
   }
 
 }
+
