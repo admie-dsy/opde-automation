@@ -1,5 +1,3 @@
-
-
 package com.ipto.opdefx.ui
 
 import com.ipto.opdefx.concurrency.FiberSystem
@@ -8,10 +6,13 @@ import com.ipto.opdefx.db.MessageDB
 import com.ipto.opdefx.provider.ConfigProvider
 import com.ipto.opdefx.requests.RequestBroker
 import com.ipto.opdefx.util.FileUtils
-//import javax.swing.table.DefaultTableModel
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
+import java.awt.Image
+import java.awt.Color
+import java.awt.Font
+import javax.imageio.ImageIO
 import scala.swing._
 import zio._
 import zio.console._
@@ -26,8 +27,9 @@ class MainUI extends MainFrame{
   private val runtime = Runtime.default
   private val db = new MessageDB(conf)
 
-  title = "OPDE Automaton"
-  preferredSize = new Dimension(1024, 384)
+  title = "OPDE Scheduler"
+  preferredSize = new Dimension(900, 350)
+  iconImage = ImageIO.read(getClass.getResource("/logo.png"));
 
   private val schedule = com.ipto.opdefx.cron.Schedule("00,30 * * * *", DateTimeZone.forID("Europe/Athens"))
   private val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
@@ -40,10 +42,6 @@ class MainUI extends MainFrame{
         editable = false
       }
 
-      dbArea = new TextArea() {
-        editable = false
-      }
-
       updateArea = for {
         message <- messageQueue.take
         _ <- ZIO.succeed{
@@ -53,37 +51,16 @@ class MainUI extends MainFrame{
         _ <- ZIO.sleep(2.seconds)
       } yield ()
 
-      /*table = new Table(4, 3){
-        peer.setModel(new DefaultTableModel {
-
-          private val columnNames = Array[String]("Filename", "Process Time", "File Type")
-
-          override def getRowCount: Int = 4
-
-          override def getColumnCount: Int = 3
-
-          override def getColumnName(columnIndex: Int): String = columnNames(columnIndex)
-
-          override def isCellEditable(row: Int, column: Int): Boolean = false
-
-        })
-      }*/
-
-      label = new Label(" Next run: ")
-
       nextRunField = new TextArea{
-        columns = 40
+        columns = 1
         rows = 1
         text = s" ${fmt.print(schedule.getNextAfter(DateTime.now()))} "
         editable = false
       }
 
-      //tableModel = table.peer.getModel.asInstanceOf[DefaultTableModel]
-
       executor = new ScheduleExecutor(schedule,
         () => {
           println("Doing stuff")
-          //val scriptResult = s"python $script".!
           val filenames = FileUtils.copyFiles(conf.sourceDir, conf.out, conf.processed, offset = 20)
           runtime.unsafeRun{
             for {
@@ -98,6 +75,11 @@ class MainUI extends MainFrame{
       _ <- ZIO.succeed {
         contents = new GridBagPanel {
 
+          // GridBagPanel background
+          val gridPanelBackground = new Color(206, 216, 225)
+          background = gridPanelBackground
+
+
           def constraints(x: Int, y: Int, gridwidth: Int = 1, gridheight: Int = 1, weightx: Double = 0.0, weighty: Double = 0.0, fill: GridBagPanel.Fill.Value = GridBagPanel.Fill.None): Constraints = {
             val c = new Constraints()
             c.gridx = x
@@ -110,12 +92,25 @@ class MainUI extends MainFrame{
             c
           }
 
-          add(Button("Show Props") {
+          // Button/Label Properties
+          val buttonColor = new Color(93, 109, 126)
+          val buttonForegroundColor = Color.white
+          val nextRunForegroundColor = new Color(52, 73, 94)
+          val buttonFont = new Font("Dialog", Font.BOLD, 12)
+          val labelFont = new Font("MONOSPACED", Font.BOLD, 14)
+
+          // Show Props button
+          var button = Button("Show Props") {
             val provider = ConfigProvider.newInstance("app.properties")
             Dialog.showMessage(contents.head, provider.toString)
-          }, constraints(0, 0, fill = GridBagPanel.Fill.Both))
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 0, fill = GridBagPanel.Fill.Both))
 
-          add(Button("Start System"){
+          // Start System button
+          button = Button("Start System"){
             runtime.unsafeRunAsync_(for {
               _ <- ZIO.succeed(textArea.append("Starting System\n"))
               _ <- flag.set(1)
@@ -123,9 +118,14 @@ class MainUI extends MainFrame{
               _ <- putStrLn(s"$value")
               _ <- FiberSystem.run(flag, messageQueue)
             } yield ())
-          }, constraints(1, 0, fill = GridBagPanel.Fill.Both))
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 1, fill = GridBagPanel.Fill.Both))
 
-          add(Button("Start Scheduler"){
+          // Start Scheduler button
+          button = Button("Start Scheduler"){
             runtime.unsafeRunAsync_(for {
               _ <- ZIO.succeed{
                 try {
@@ -136,63 +136,78 @@ class MainUI extends MainFrame{
                 }
               }
             } yield ())
-          },
-            constraints(2, 0, fill = GridBagPanel.Fill.Both)
-          )
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 2, fill = GridBagPanel.Fill.Both))
 
-          add(Button("Stop System"){
+          // Stop System button
+          button = Button("Stop System"){
             runtime.unsafeRunAsync_(for {
               _ <- ZIO.succeed(executor.shutdown())
               _ <- flag.set(0)
               value <- flag.get
               _ <- putStrLn(s"$value")
             } yield ())
-          }, constraints(3, 0, fill = GridBagPanel.Fill.Both))
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 3, fill = GridBagPanel.Fill.Both))
 
-          add(label, constraints(4, 0, fill = GridBagPanel.Fill.Both))
+          // Show Progress button
+          button = Button("Show Progress"){}
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 4, fill = GridBagPanel.Fill.Both))
 
-          add(nextRunField, constraints(5, 0, fill = GridBagPanel.Fill.Both))
-
-          add(Button("Show Progress"){
-
-          },
-            constraints(6, 0, fill = GridBagPanel.Fill.None))
-
-          add(Button("Connectivity Test") {
+          // Connectivity Test button
+          button = Button("Connectivity Test") {
             runtime.unsafeRunAsync_(for {
               response <- RequestBroker.getConnectionStatus(conf.connectivityEndpoint)
-              _ = dbArea.append(response)
+              _ = Dialog.showMessage(contents.head, response)
             } yield ())
-          }, constraints(7, 0, fill = GridBagPanel.Fill.None))
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 5, fill = GridBagPanel.Fill.Both))
 
-          add(Button("Exit"){
+          // Exit button
+          button = Button("Exit"){
             runtime.unsafeRunAsync_(for {
               flagValue <- flag.get
               _ = if (flagValue == 1) flag.set(0)
               _ = Thread.sleep(1000)
               _ <- ZIO.succeed(System.exit(0))
             } yield ())
-          }, constraints(8, 0, fill = GridBagPanel.Fill.None))
+          }
+          button.background = buttonColor
+          button.foreground = buttonForegroundColor
+          button.font = buttonFont
+          add(button, constraints(0, 6, fill = GridBagPanel.Fill.Both))
 
-          add(new ScrollPane(textArea), constraints(0, 1,
-            gridheight = 3,
-            gridwidth = 9,
-            weighty = 1.0,
-            weightx = 1.0,
-            fill = GridBagPanel.Fill.Both))
+          // Next Run
+          var label = new Label(" ")
+          add(label, constraints(0, 7, fill = GridBagPanel.Fill.Both))
+          label = new Label(" Next run ")
+          label.foreground = nextRunForegroundColor
+          label.font = labelFont
+          add(label, constraints(0, 8, fill = GridBagPanel.Fill.Both))
+          val gridpanelBackground = new Color(206, 216, 225)
+          nextRunField.background = gridPanelBackground
+          nextRunField.foreground = nextRunForegroundColor
+          nextRunField.font = labelFont
+          add(nextRunField, constraints(0, 9, fill = GridBagPanel.Fill.Both))
 
-          add(new Separator(), constraints(0, 2,
-            gridwidth = 9,
-            weighty = 1.0,
-            weightx = 1.0,
-            fill = GridBagPanel.Fill.Horizontal
-          ))
-
-          add(new ScrollPane(dbArea), constraints(0, 3,
-            gridheight = 3,
-            gridwidth = 9,
-            weighty = 1.0,
-            weightx = 1.0,
+          // TextArea ScrollPanel
+          add(new ScrollPane(textArea), constraints(1, 0,
+            gridheight = 10,
+            gridwidth = 10,
+            weighty = 5.0,
+            weightx = 5.0,
             fill = GridBagPanel.Fill.Both))
         }
 
@@ -206,4 +221,3 @@ class MainUI extends MainFrame{
   }
 
 }
-
