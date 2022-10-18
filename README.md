@@ -1,6 +1,6 @@
-###OPDEFX - Automated IGM profile publication with a ZIO backend
+<h1>OPDEFX - Automated IGM profile publication with a ZIO backend</h1>
 
-**Installation Instructions**
+<h3>Installation Instructions</h3>
 
 1. Install scala & sbt.
 2. Clone the project.
@@ -10,11 +10,11 @@
 
 ![GUI](assets/gui.PNG)
 
-**Under the hood**
+<h3>Under the hood</h3>
 
 ![IGM file processing](assets/under_the_hood.png)
 
-**TODO**
+<h3>TODO</h3>
 
 - [ ] Migrate to ZIO 2.0
 - [ ] Add transactional semantics to IGM publications
