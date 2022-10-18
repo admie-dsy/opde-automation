@@ -2,8 +2,6 @@ package com.ipto.opdefx.cron
 
 import java.util.concurrent.{Executors, TimeUnit}
 
-import com.ipto.opdefx.db.MessageDB
-import com.ipto.opdefx.provider.ConfigProvider
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 

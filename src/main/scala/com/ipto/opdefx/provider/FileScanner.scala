@@ -18,6 +18,7 @@ class ReadyScanner(val dir:File, val conf:ConfigProvider) extends Iterator[Token
 
   private val files = runtime.unsafeRun{
     for {
+      _ <- db.createTable
       data <- db.getBatch()
     } yield data
   }.iterator
@@ -28,7 +29,7 @@ class ReadyScanner(val dir:File, val conf:ConfigProvider) extends Iterator[Token
 
     val model = if (hasNext) {
       val filename = files.next()
-      val absFilename = s"$dir${File.separatorChar}${filename}"
+      val absFilename = s"$dir${File.separatorChar}$filename"
       if (filename.contains("EQ")) {
         EQ(absFilename, saml)
       } else if (filename.contains("SV")) {

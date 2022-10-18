@@ -1,0 +1,8 @@
+.bsp/*
+.idea/*
+assets/*
+project/project/*
+project/target/*
+src/main/resources/logo.png
+target/*
+

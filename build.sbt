@@ -20,9 +20,23 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest-funsuite" % "3.2.10" % Test,
 )
 
-assemblyMergeStrategy in assembly := {
+/*assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
+}*/
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs@_*) =>
+    xs.map(_.toLowerCase) match {
+      case "manifest.mf" :: Nil |
+           "index.list" :: Nil |
+           "dependencies" :: Nil |
+           "license" :: Nil |
+           "notice" :: Nil => MergeStrategy.discard
+      case _ => MergeStrategy.first // was 'discard' previousely
+    }
+  case "reference.conf" => MergeStrategy.concat
+  case _ => MergeStrategy.first
 }
 
 //mainClass in (Compile, packageBin) := Some("com.ipto.zopde.ZOPDE")

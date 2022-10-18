@@ -4,11 +4,11 @@ import scala.io.Source
 
 class ConfigProvider private (val workdir:String, val out:String, val saml:String, val username:String, val password:String,
                               val tokenEndpoint:String, val tokenAction:String, val publicationEnpoint:String, val publicationAction:String,
-                              val processed:String, val script:String, val connectivityEndpoint:String, val sourceDir:String,
+                              val processed:String, val connectivityEndpoint:String, val sourceDir:String,
                               val in:String, val db:String) {
 
   override def toString: String = {
-    List(workdir, out, saml, tokenEndpoint, tokenAction, publicationAction, publicationEnpoint, processed, script).mkString("\n")
+    List(workdir, out, saml, tokenEndpoint, tokenAction, publicationAction, publicationEnpoint, processed).mkString("\n")
   }
 
 }
@@ -21,7 +21,7 @@ object ConfigProvider {
   }
 
   def newInstance(propertyFile:String):ConfigProvider = {
-    val lines = Source.fromResource(propertyFile).getLines().toList
+    val lines = Source.fromResource(propertyFile).getLines().toList.filterNot(_.startsWith("#"))
     val map = lines.map(_.split("=")).map(l => l(0).trim -> l(1).trim).toMap
     new ConfigProvider(workdir = appendToHomeDir(map("workdir")),
       out = appendToHomeDir(map("out")),
@@ -33,7 +33,6 @@ object ConfigProvider {
       publicationEnpoint = map("publicationEndpoint"),
       publicationAction = map("publicationAction"),
       processed = appendToHomeDir(map("processed")),
-      script = map("script"),
       connectivityEndpoint = map("connectivityEndpoint"),
       sourceDir = map("sourceDir"),
       in = appendToHomeDir(map("in")),

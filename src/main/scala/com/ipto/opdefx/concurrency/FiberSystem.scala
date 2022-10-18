@@ -18,19 +18,23 @@ object FiberSystem {
 
     sshConsumer <- Consumer.create("SSH", messageQueue)
     ctxSSH <- sshConsumer.run
-    (sshQueue, sshFibber) = ctxSSH
+    (sshQueue, _) = ctxSSH
 
     svConsumer <- Consumer.create("SV", messageQueue)
     ctxSV <- svConsumer.run
-    (svQueue, svFibber) = ctxSV
+    (svQueue, _) = ctxSV
 
     tpConsumer <- Consumer.create("TP", messageQueue)
     ctxTP <- tpConsumer.run
-    (tpQueue, tpFibber) = ctxTP
+    (tpQueue, _) = ctxTP
 
-    eqConsumer <- Consumer.create("EQ", messageQueue)
+    eqConsumer <- Consumer.create("EQ1", messageQueue)
     ctxEQ <- eqConsumer.run
-    (eqQueue, eqFibber) = ctxEQ
+    (eqQueue, _) = ctxEQ
+
+    eqConsumer1 <- Consumer.create(name = "EQ", messageQueue)
+    ctxEQ1 <- eqConsumer1.run
+    (eqQueue1, _) = ctxEQ1
 
     distributor <- Distribute.create()
     ctxDistribute <- distributor.run
@@ -40,36 +44,19 @@ object FiberSystem {
     producerFiber <- producer.run
 
     _ <- topicQueueSSH.subscribe(sshQueue, group = 1)
-    topicSHHFiber <- topicQueueSSH.run
-
-    //_ <- topicSHHFiber.join
+    _ <- topicQueueSSH.run
 
     _ <- topicQueueSV.subscribe(svQueue, group = 2)
-    topicQueueSVFiber <- topicQueueSV.run
-
-    //_ <- topicQueueSVFiber.join
+    _ <- topicQueueSV.run
 
     _ <- topicQueueTP.subscribe(tpQueue, group = 3)
-    topicQueueTPFiber <- topicQueueTP.run
-
-    //_ <- topicQueueTPFiber.join
+    _ <- topicQueueTP.run
 
     _ <- topicQueueEQ.subscribe(eqQueue, group = 4)
-    topicQueueEQFiber <- topicQueueEQ.run
-
-    //_ <- topicQueueEQFiber.join
-
-    /*_ <- sshFibber.join
-
-    _ <- svFibber.join
-
-    _ <- tpFibber.join
-
-    _ <- eqFibber.join*/
+    _ <- topicQueueEQ.subscribe(eqQueue1, group = 4)
+    _ <- topicQueueEQ.run
 
     _ <- producerFiber.join
-
-    //_ <- distributeFiber.join
 
   } yield ()
 }

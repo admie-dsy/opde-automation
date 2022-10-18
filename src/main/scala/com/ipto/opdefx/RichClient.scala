@@ -3,7 +3,7 @@ package com.ipto.opdefx
 import com.ipto.opdefx.ui.MainUI
 import zio._
 
-object RichClient extends {
+object RichClient {
 
   def main(args:Array[String]): Unit = {
     val runtime = Runtime.default

@@ -3,13 +3,12 @@ package com.ipto.opdefx.db
 import java.sql.{Connection, DriverManager}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.logging.SimpleFormatter
 
 import com.ipto.opdefx.provider.ConfigProvider
+import org.h2.message.DbException
 import zio._
-import zio.console._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 class MessageDB(val conf:ConfigProvider) {
 
@@ -20,7 +19,7 @@ class MessageDB(val conf:ConfigProvider) {
   private val connection: () => ZIO[Any, Nothing, Connection] = () => url.map(u => DriverManager.getConnection(u))
 
   private val createStatement: () => ZIO[Any, Throwable, Boolean] = () => connection().bracket(con => ZIO.succeed(con.close())) { con =>
-    val sql = """create table message(filename varchar(50) primary key, publicationDate varchar(50), fileGroup varchar(50), state varchar(50))"""
+    val sql = """create table if not exists message(filename varchar(50) primary key, publicationDate varchar(50), fileGroup varchar(50), state varchar(50))"""
     val stm = con.createStatement()
 
     ZIO.fromTry(Try(stm.execute(sql)))
@@ -37,7 +36,7 @@ class MessageDB(val conf:ConfigProvider) {
       val fileGroup = filename.substring(0, 17)
 
       val sql = s"""MERGE INTO MESSAGE M
-                   |USING (SELECT '${filename}' FILENAME, '${dateStr}' PUBLICATIONDATE, '${fileGroup}' FILEGROUP, '${state}' STATE) D
+                   |USING (SELECT '$filename' FILENAME, '$dateStr' PUBLICATIONDATE, '$fileGroup' FILEGROUP, '$state' STATE) D
                    |ON (M.FILENAME = D.Filename)
                    |WHEN NOT MATCHED THEN
                    |INSERT (FILENAME, PUBLICATIONDATE, FILEGROUP, STATE) VALUES (D.FILENAME, D.PUBLICATIONDATE, D.FILEGROUP, D.STATE)""".stripMargin
@@ -79,6 +78,24 @@ class MessageDB(val conf:ConfigProvider) {
       stm.executeLargeBatch()
       con.commit()
       })
+  }
+
+  def getFileStatus(filename:String): ZIO[Any, Throwable, Int] = connection().bracket(con => ZIO.succeed(con.close())) { con =>
+
+    val rs = ZIO.fromTry(Try {
+      val sql = """SELECT count(*) AS FILE_COUNT FROM MESSAGE WHERE FILENAME = ? AND STATE = 'PROCESSED'"""
+      val stm = con.prepareStatement(sql)
+      stm.setString(1, filename)
+      stm.executeQuery()
+    })
+
+    for {
+      results <- rs
+      count <- ZIO.succeed{
+        results.next()
+        results.getLong("FILE_COUNT")
+      }
+    } yield count.toInt
   }
 
 
@@ -156,7 +173,7 @@ class MessageDB(val conf:ConfigProvider) {
   private def updateState(filename:String, state:String):ZIO[Any, Throwable, Unit] = connection().bracket(con => ZIO.succeed(con.close())){con =>
 
     val sql = s"""MERGE INTO MESSAGE M
-                 |USING (SELECT '${filename}' FILENAME, '${state}' STATE) D
+                 |USING (SELECT '$filename' FILENAME, '$state' STATE) D
                  |ON (M.FILENAME = D.Filename)
                  |WHEN MATCHED THEN
                  |UPDATE SET M.STATE = D.STATE""".stripMargin

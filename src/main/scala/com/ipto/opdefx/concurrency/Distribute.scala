@@ -49,5 +49,5 @@ case class Distribute() {
 }
 
 object Distribute {
-  def create() = UIO(Distribute())
+  def create(): UIO[Distribute] = UIO(Distribute())
 }

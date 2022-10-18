@@ -9,7 +9,6 @@ import com.ipto.opdefx.util.FileUtils
 import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.DateTimeFormat
 
-import java.awt.Image
 import java.awt.Color
 import java.awt.Font
 import javax.imageio.ImageIO
@@ -18,18 +17,16 @@ import zio._
 import zio.console._
 import zio.duration._
 
-import sys.process._
 
 class MainUI extends MainFrame{
 
   private val conf = ConfigProvider.newInstance("app.properties")
-  private val script = conf.script
   private val runtime = Runtime.default
   private val db = new MessageDB(conf)
 
   title = "OPDE Scheduler"
   preferredSize = new Dimension(900, 350)
-  iconImage = ImageIO.read(getClass.getResource("/logo.png"));
+  iconImage = ImageIO.read(getClass.getResource("/logo.png"))
 
   private val schedule = com.ipto.opdefx.cron.Schedule("00,30 * * * *", DateTimeZone.forID("Europe/Athens"))
   private val fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
@@ -94,7 +91,7 @@ class MainUI extends MainFrame{
 
           // Button/Label Properties
           val buttonColor = new Color(93, 109, 126)
-          val buttonForegroundColor = Color.white
+          val buttonForegroundColor: Color = Color.white
           val nextRunForegroundColor = new Color(52, 73, 94)
           val buttonFont = new Font("Dialog", Font.BOLD, 12)
           val labelFont = new Font("MONOSPACED", Font.BOLD, 14)
